@@ -1,0 +1,6 @@
+sites:
+  - SCBI
+  - ORNL
+  - GRSM
+  - SERC
+  # - TALL # doesn't include any tulip poplar
