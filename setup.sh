@@ -25,8 +25,19 @@ install_r_package() {
     Rscript -e "if (!requireNamespace('remotes', quietly = TRUE)) install.packages('remotes', repos = 'http://cran.us.r-project.org'); remotes::install_github('$package_name')"
 }
 
+# Function to install a Python package from GitHub
+install_python_package() {
+    package_name=$1
+    echo "Installing Python package: $package_name"
+    pip install $package_name
+}
+
 # Install geoNEON package
 echo "Installing geoNEON package..."
 install_r_package "NEONScience/NEON-geolocation/geoNEON"
+
+# Install neonwranglerpy package
+echo "Installing neonwranglerpy package..."
+install_python_package "git+https://github.com/weecology/neonwranglerpy.git"
 
 echo "Setup completed successfully."
