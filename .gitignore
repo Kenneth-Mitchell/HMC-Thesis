@@ -164,3 +164,4 @@ cython_debug/
 input_data
 temp_data
 API_token
+bounding_box_images

@@ -7,9 +7,9 @@ import rasterio.features
 import rasterio.warp
 import os
 import torch
+torch.set_float32_matmul_precision('medium')
 model = main.deepforest()
-model_path = "/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/NEON.pt"
-model.load_state_dict(torch.load(model_path), strict=False)
+model.use_release()
 
 class Image():
     def __init__(self, path):
@@ -29,7 +29,7 @@ class Image():
 
     def get_bounding_boxes(self):
         # Predictions
-        boxes = model.predict_tile(self.deepforest_image, return_plot = False, patch_size=500,patch_overlap=0.25)
+        boxes = model.predict_tile(self.deepforest_image, patch_size=500,patch_overlap=0.25)
         self.boxes = boxes
         self.gdf = utilities.annotations_to_shapefile(self.boxes, transform=self.transform, crs=self.crs)
 
@@ -42,7 +42,7 @@ class Image():
         # Sort the dataframe by score and filter to top 500
         temp = self.gdf.copy()
         temp =  temp.sort_values(by="score", ascending=False)
-        temp = temp.head(500)
+        temp = temp.head(10)
 
 
         # Open the original image
