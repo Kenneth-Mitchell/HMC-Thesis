@@ -22,6 +22,7 @@ class Image():
         self.shape = self.data.shape
         self.boxes = None
         self.gdf = None
+        self.annotations = None
         self.deepforest_image = get_data(self.path)
     
     def plot(self):
@@ -32,6 +33,12 @@ class Image():
         boxes = model.predict_tile(self.deepforest_image, patch_size=500,patch_overlap=0.25)
         self.boxes = boxes
         self.gdf = utilities.annotations_to_shapefile(self.boxes, transform=self.transform, crs=self.crs)
+
+    def annotate(self, vst_path):
+        if not self.gdf:
+            self.get_bounding_boxes()
+        
+        
 
     def split_into_trees(self):
         if not self.boxes:

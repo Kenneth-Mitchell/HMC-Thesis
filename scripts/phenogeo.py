@@ -34,7 +34,7 @@ for folder in os.listdir(input_path):
         pheno_df = pd.concat([pheno_df,merged_df])
 
 # remove leading and trailing whitespaces from all the values in the dataframe
-pheno_df.map(lambda x: x.strip() if isinstance(x, str) else x)
+pheno_df = pheno_df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
 # write the pheno_df dataframe to a new csv file
 pheno_path = os.path.join(output_path, 'pheno.csv')
@@ -52,7 +52,7 @@ if not os.path.isfile(geo_path):
 geo_df = pd.read_csv(geo_path)
 
 # merge the dataframes on individualID
-merged_df = pd.merge(pheno_df, geo_df, on='individualID', how='inner')
+merged_df = pd.merge(pheno_df, geo_df, on='individualID', how='outer')
 
 # write the merged dataframe to a new csv file
 merged_path = os.path.join(output_path, 'phenogeo.csv')
