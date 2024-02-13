@@ -5,7 +5,6 @@ import torch.nn.functional as F
 class SpectralAttention(nn.Module):
     def __init__(self,in_channels, kernel_size):
         super(SpectralAttention, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d((1,1))
         self.conv1 = nn.Conv1d(in_channels, in_channels, kernel_size=kernel_size, padding=(kernel_size-1)//2)
         self.conv2 = nn.Conv1d(in_channels, in_channels, kernel_size=1)
     
@@ -13,7 +12,7 @@ class SpectralAttention(nn.Module):
         b, c, _, _ = x.size()
 
         # Average pool the input feature map
-        y = self.avg_pool(x).view(b,c,1).permute(0,2,1)
+        y = F.avg_pool2d(x).view(b,c,1).permute(0,2,1)
 
         # Apply 1D convolutions and activation functions
         y = F.relu(self.conv1(y))
@@ -34,15 +33,18 @@ class CNNSAM(nn.Module):
         self.fc = nn.Linear(128, num_classes)
 
     def forward(self, x):
+
         # Apply the spectral attention module after each convolutional layer
         x = F.relu(self.conv1(x))
         x = self.spectral_attention1(x)
         x = F.relu(self.conv2(x))
         x = self.spectral_attention2(x)
         x = F.relu(self.conv3(x))
+
         # Globally average pool the feature map and apply a fully connected layer
         x = F.avg_pool2d(x, x.size()[2:])
         x = x.view(x.size(0), -1)
+        
         # Apply a sigmoid activation function to the output to get a probability
         x = torch.sigmoid(self.fc(x))
         return x
