@@ -1,5 +1,5 @@
 from dask.distributed import Client
-from bbox import Image
+from image import Image
 import os
 import dask
 from dask.diagnostics import ProgressBar

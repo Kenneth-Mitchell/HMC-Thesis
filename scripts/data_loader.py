@@ -1,26 +1,8 @@
-from dask.distributed import Client
-from image import Image
-import os
-import dask
-from dask.diagnostics import ProgressBar
-from deepforest import main
-from dask_cuda import LocalCUDACluster
-from dask.distributed import Client
-import dask.delayed  # Import the delayed decorator
 
-from deepforest import main
-from deepforest import get_data
-from deepforest import utilities
-import matplotlib.pyplot as plt
-import rasterio
-import rasterio.features
-import rasterio.warp
-import os
 import pandas as pd
 import yaml
 import rpy2.robjects as robjects
 from rpy2.robjects.packages import importr
-
 # Initialize R packages
 neonUtilities = importr('neonUtilities')
 base = importr('base')
@@ -29,28 +11,11 @@ base = importr('base')
 with open('../config.yml', 'r') as file:
     config = yaml.safe_load(file)
 
-with open('../API_token.txt', 'r') as file:
+with open('../API_token', 'r') as file:
     token = file.read()
 
 
 
-
-@dask.delayed
-def download_data_chunk(dpID, site, year):
-    #given the dpID and site, download the data (either rgb or hsi)
-    
-
-    # basic call structure
-    # neonUtilities.zipsByProduct(dpID=dpID, site=base.c(site), 
-    #                                 savepath=savepath, package='basic',
-    #                                 check_size='FALSE', token=token)
-    pass
-
-@dask.delayed 
-def process_image(rgb_file_path, hsi_file_path, save_path):
-    img = Image(rgb_file_path)
-    img.generate_hsi_trees(hsi_file_path)
-    img.save_hsi_trees(save_path) #TODO
 
 def prepare_phenogeo():
     phenogeo_csv = "/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/phenogeo.csv"
@@ -60,40 +25,46 @@ def prepare_phenogeo():
     df.reset_index(drop=True, inplace=True)
     return df
 
+def unique_locations(df):
+    #for each site, return the unique locations (within 1000 utm units)
+    df_site = df[['siteID','adjNorthing', 'adjEasting']].copy()
+    df_site.loc[:, ['adjNorthing', 'adjEasting']] = df_site[['adjNorthing', 'adjEasting']].round(decimals=-3)
+    df_site = df_site.drop_duplicates()
+    
+    
+    return df_site
+
+# @dask.delayed
+def download_data_chunk(dpID, site, year, Easting, Northing, buffer=0):
+    #given the dpID and site, download the data (either rgb or hsi)
+    neonUtilities.byTileAOP(dpID, site, year, Easting, Northing, buffer, True, False)
+    pass
 
 def main():
     df = prepare_phenogeo()
-    
-    # Create a Dask CUDA cluster
-    cluster = LocalCUDACluster()
+    df_site = unique_locations(df)
 
-    # Connect a Dask client to the cluster
-    client = Client(cluster)
+    rgb_dpID = config['dpIDs'][0]
+    hsi_dpID = config['dpIDs'][1]
 
-    # Log the dashboard link
-    print(client.dashboard_link)
+    years_by_site = {}
+    for site in df_site['siteID']:
+        years_by_site[site] = []
 
-    rgb_dpID = config['dpID'][0]
-    hsi_dpID = config['dpID'][1]
-    with ProgressBar():
-        tasks = []
-        for batch in config['batches']:
-            year = list(batch.items())[0][0]
-            sites = list(batch.items())[0][1]
-            for site in sites:
-                #download rgb
-                tasks.append(download_data_chunk(rgb_dpID, site, year))
-                #download hsi
-                tasks.append(download_data_chunk(hsi_dpID, site, year))
-                #process images
-                for root, dirs, files in #TODO: need the rgb and hsi paths
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        tasks.append(process_image(rgb_file_path, hsi_file_path, save_path))
+    for batch in config['batches']:
+        year = list(batch.items())[0][0]
+        sites = list(batch.items())[0][1]
+        for site in sites:
+            years_by_site[site].append(year)
 
+    for row in df_site.itertuples():
+        site = row.siteID
+        Easting = row.adjEasting
+        Northing = row.adjNorthing
+        for year in years_by_site[site]:
+            download_data_chunk(rgb_dpID, site, year, Easting, Northing)
+            download_data_chunk(hsi_dpID, site, year, Easting, Northing)
 
-        # Compute all tasks
-        results = dask.compute(*tasks)
 
 if __name__ == '__main__':
     main()
