@@ -32,6 +32,7 @@ class Image():
         self.gdf = pd.DataFrame()
         self.annotations = None
         self.deepforest_image = get_data(self.path)
+        self.ground_truth_df = pd.DataFrame()
     
     def plot(self):
         plt.imshow(self.data.transpose(1, 2, 0)) 
@@ -43,10 +44,10 @@ class Image():
         self.gdf = utilities.annotations_to_shapefile(self.boxes, transform=self.transform, crs=self.crs)
         self.gdf = self.gdf[self.gdf['score'] > score_threshold]
 
-    def annotate(self, ground_truth_df, threshold=10):
+    def annotate(self, ground_truth_df, threshold=float('inf')):
+        self.get_hsi_points() #TODO only run if needed
         if self.gdf.empty:
             self.get_bounding_boxes()
-        self.gdf['ground_truth'] = None
         self.gdf['distance'] = None
         self.gdf['labeled'] = False
         
@@ -68,19 +69,18 @@ class Image():
             
             closest_index = np.argmin(distances, axis=1)
             if distance < threshold:
-                self.gdf.loc[closest_index, 'ground_truth'] = row.to_frame().T # TODO Why nan?
                 self.gdf.loc[closest_index, 'distance'] = distance
                 self.gdf.loc[closest_index, 'labeled'] = True
+                self.ground_truth_df = pd.concat([self.ground_truth_df, pd.concat([self.gdf.loc[closest_index].reset_index(drop=True), row.to_frame().T.reset_index(drop=True)], axis=1)], ignore_index=True)
+        return not self.ground_truth_df.empty
                 
     def generate_hsi_trees(self, hsi_path):
-        self.get_hsi_points() #TODO only run if needed
+        if self.ground_truth_df.empty:
+            raise Exception("No ground truth data has been annotated. Please run the annotate method first.")
         f = h5py.File(hsi_path, 'r')
-        reflectance_data =f['GRSM']['Reflectance']['Reflectance_Data'][:]
+        reflectance_data =f[os.path.basename(hsi_path).split('_')[2]]['Reflectance']['Reflectance_Data'][:]
         reflectance_data = np.rot90(reflectance_data, k=2, axes=(0,1))
-        for index, row in self.gdf.iterrows():
-            if row['labeled'] == False:
-                continue
-            print(row)
+        for index, row in self.ground_truth_df.iterrows():
             xmin, ymin, xmax, ymax = row['xmin_hsi'], row['ymin_hsi'], row['xmax_hsi'], row['ymax_hsi']
             subset = reflectance_data.copy()[xmin:xmax, ymin:ymax, :]
             yield subset, row
