@@ -64,7 +64,7 @@ class Image():
 
         for index, row in df.iterrows(): #TODO currently will override multiple competing values
             ground_truth_utm = pd.to_numeric(row[['adjNorthing', 'adjEasting']].values).reshape(1, -1)
-            distances = cdist(ground_truth_utm, centroid_array)
+            distances = cdist(ground_truth_utm, centroid_array) # TODO consider using the size of the tree
             distance = min(distances[0, :])
             
             closest_index = np.argmin(distances, axis=1)

@@ -28,14 +28,12 @@ def prepare_phenogeo():
 def unique_locations(df):
     #for each site, return the unique locations (within 1000 utm units)
     df_site = df[['siteID','adjNorthing', 'adjEasting']].copy()
-    df_site.loc[:, ['adjNorthing', 'adjEasting']] = df_site[['adjNorthing', 'adjEasting']].round(decimals=-3)
+    df_site.loc[:, ['adjNorthing', 'adjEasting']] = df_site[['adjNorthing', 'adjEasting']].round(decimals=-3) # TODO check whether this works the same as floor
     df_site = df_site.drop_duplicates()
-    
-    
     return df_site
 
 # @dask.delayed
-def download_data_chunk(dpID, site, year, Easting, Northing, buffer=0):
+def download_data_chunk(dpID, site, year, Easting, Northing, buffer=5):
     #given the dpID and site, download the data (either rgb or hsi)
     neonUtilities.byTileAOP(dpID, site, year, Easting, Northing, buffer, True, False)
     pass

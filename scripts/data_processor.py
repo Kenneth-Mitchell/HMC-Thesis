@@ -13,6 +13,8 @@ import rasterio.features
 import rasterio.warp
 import os
 import pandas as pd
+import numpy as np
+import h5py
 
 # rgb sample file /mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/DP3.30010.001/neon-aop-products/2021/FullSite/D07/2021_GRSM_5/L3/Camera/Mosaic/2021_GRSM_5_276000_3951000_image.tif
 # hsi sample file /mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/DP3.30006.001/neon-aop-products/2021/FullSite/D07/2021_GRSM_5/L3/Spectrometer/Reflectance/NEON_D07_GRSM_DP3_282000_3957000_reflectance.h5
@@ -42,17 +44,23 @@ def make_image_dict(rgb, hsi):
     return final_dict
 
 @dask.delayed 
-def process_image(rgb_file, hsi_file):
+def process_image(rgb_file, hsi_file, df):
     img = Image(rgb_file)
+    img.get_bounding_boxes()
+    if not img.annotate(df):
+        print(f"No data was annotated for file {rgb_file}")
+        return
     for subset, row in img.generate_hsi_trees(hsi_file):
-
-        rasterio.imwrite('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/hsi_tensors/' + row['Eas'] + row, subset)
+        with h5py.File(f"/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/hsi_tensors/{row['siteID']}_{row['date']}_{row['adjEasting']}_{row['adjNorthing']}.h5", 'w') as f:
+            f.create_dataset('subset', data=np.array(subset))
+    img.ground_truth_df.to_csv(f"/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/hsi_tensors/master.csv", mode='a', header=True)
         
 
 
 def main():
     rgb = '/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/DP3.30010.001/neon-aop-products'
     hsi = '/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/DP3.30006.001/neon-aop-products'
+    df = prepare_phenogeo()
     files = make_image_dict(rgb, hsi)
     # Create a Dask CUDA cluster
     cluster = LocalCUDACluster()
@@ -67,14 +75,12 @@ def main():
         for file in files.values():
             rgb_file = file[0]
             hsi_file = file[1]
-
+            processed = process_image(rgb_file, hsi_file, df)
             
-            tasks.append(process_image(rgb_file, hsi_file))
-            break
+            tasks.append(processed)
 
         # Compute all tasks
-        results = dask.compute(*tasks)
-
+    results, failed = dask.compute(*tasks, on_error='continue')
 
 
     # hsi_image_path = "/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/hsi/NEON_D07_GRSM_DP3_275000_3951000_reflectance.h5"
