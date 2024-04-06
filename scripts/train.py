@@ -30,6 +30,7 @@ df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 50]
 df = df.loc[df.groupby('geometry')['distance'].idxmin()]
 #TODO use a better filtering method
 df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 20]
+df = df[df['distance'] < 10]
 
 # Define hyperparameters
 batch_size = 32
@@ -56,7 +57,6 @@ class CustomDataset(Dataset):
         self.augmentation = transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomRotation(degrees=90),
-
         ])
 
     def __len__(self):
@@ -126,9 +126,22 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 # print(train_df['taxonID_y'].value_counts())
 # print(sum([1 for x in train_df['taxonID_y'] if not x == 'LITU']))
 
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2, alpha=0.25):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+
+    def forward(self, outputs, labels):
+        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(outputs, labels)
+        pt = torch.exp(-bce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * bce_loss
+        return torch.mean(focal_loss)
+
 model = CNNSAM(in_channels=426, num_classes=1).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 criterion = nn.BCEWithLogitsLoss()
+# criterion = FocalLoss()
 val_losses = []
 val_accuracies = []
 

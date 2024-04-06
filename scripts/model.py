@@ -16,7 +16,7 @@ class SpectralAttention(nn.Module):
 
         # Apply 1D convolutions and activation functions
         y = torch.sigmoid(self.conv1(y))
-        y = torch.sigmoid(self.conv2(y)).view(b,c,1,1) # relu or sigmoid?
+        y = torch.sigmoid(self.conv2(y)).view(b,c,1,1) # relu or sigmoid? TODO
         # y = y.expand_as(x)
         # print(y)
         # Multiply the input feature map by the attention map
@@ -26,8 +26,8 @@ class SpectralAttention(nn.Module):
 class CNNSAM(nn.Module):
     def __init__(self, in_channels, num_classes):
         super(CNNSAM, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=3, padding=1) # TODO padding or no?
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1) #TODO 3d or 2d?
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.spectral_attention1 = SpectralAttention(32, kernel_size=3)
         self.spectral_attention2 = SpectralAttention(64, kernel_size=3)
