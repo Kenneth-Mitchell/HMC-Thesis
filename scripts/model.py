@@ -16,7 +16,7 @@ class SpectralAttention(nn.Module):
 
         # Apply 1D convolutions and activation functions
         y = torch.sigmoid(self.conv1(y))
-        y = torch.sigmoid(self.conv2(y)).view(b,c,1,1) # relu or sigmoid? TODO
+        y = torch.relu(self.conv2(y)).view(b,c,1,1) # relu or sigmoid? TODO
         # y = y.expand_as(x)
         # print(y)
         # Multiply the input feature map by the attention map
@@ -51,7 +51,6 @@ class CNNSAM(nn.Module):
         x = F.relu(self.conv3(x))
         # print('mean after conv3')
         # print(x.mean())
-        # Globally average pool the feature map and apply a fully connected layer
         x = torch.flatten(x, 1)
         # Apply a linear transformation without activation function
         logits = self.fc(x)

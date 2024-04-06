@@ -29,15 +29,20 @@ df['distance'] = df['distance'].astype(float)
 df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 50]
 df = df.loc[df.groupby('geometry')['distance'].idxmin()]
 #TODO use a better filtering method
-df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 20]
 df = df[df['distance'] < 10]
+df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 130]
+
 
 # Define hyperparameters
 batch_size = 32
-learning_rate = 0.01
-num_epochs = 100
+learning_rate = 0.001
+num_epochs = 250
 taxonID_to_int = {taxonID: 0 if taxonID != 'LITU' else 1 for taxonID in df['taxonID_y'].unique()}
 int_to_taxonID = {0: 'OTHER', 1: 'LITU'}
+# # multi class
+# taxonID_to_int = {taxonID: index for index, taxonID in enumerate(df['taxonID_y'].unique())}
+# int_to_taxonID = {index: taxonID for taxonID, index in taxonID_to_int.items()}
+
 class ResizeToSize:
     def __init__(self, target_size):
         self.target_size = target_size
@@ -99,11 +104,11 @@ class CustomDataset(Dataset):
         data = self.transform(data)
 
         # Perform min-max scaling on the data
-        # data = self.min_max_scale(data)
+        data = self.min_max_scale(data)
         # data = self.zscore_scale(data)
         # data = self.zeroaware_scale(data)
 
-        data = data + 1
+        # data = data + 1
 
         # Swap the channel and x dimensions
         data = data.permute(2, 1, 0)
@@ -123,11 +128,12 @@ train_dataset = CustomDataset(train_df)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dataset = CustomDataset(test_df)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-# print(train_df['taxonID_y'].value_counts())
-# print(sum([1 for x in train_df['taxonID_y'] if not x == 'LITU']))
+print(train_df['taxonID_y'].value_counts())
+print(taxonID_to_int)
+print(sum([1 for x in train_df['taxonID_y'] if not x == 'LITU']))
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=2, alpha=0.25):
+    def __init__(self, gamma=2, alpha=0.75):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
@@ -168,6 +174,7 @@ for epoch in range(num_epochs):
         # print(outputs)
         # Convert logits to predictions by thresholding
         predictions = (outputs > 0.5).float()  
+        # print(outputs)
 
         # Update correct predictions
         correct += (predictions == labels).sum().item() 
