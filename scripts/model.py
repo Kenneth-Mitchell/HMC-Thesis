@@ -30,7 +30,7 @@ class CNNSAM(nn.Module):
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1) #TODO 3d or 2d?
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
         self.spectral_attention1 = SpectralAttention(32, kernel_size=3)
-        self.spectral_attention2 = SpectralAttention(64, kernel_size=3)
+        self.spectral_attention2 = SpectralAttention(64, kernel_size=5)
         self.apply(self.init_weights)
         self.fc = nn.Linear(128*10*10, num_classes)
 

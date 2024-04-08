@@ -11,8 +11,8 @@ For background information, see the [project proposal](background/kmproposal.pdf
 If applicable, clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/Kenneth-Mitchell/micropheno
-cd micropheno
+git clone https://github.com/Kenneth-Mitchell/HMC-Thesis
+cd HMC-Thesis
 ```
 
 ### Activate the Conda Environment

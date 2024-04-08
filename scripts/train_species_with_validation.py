@@ -27,16 +27,18 @@ df = df.drop(index=36)
 df.dropna(subset=['taxonID_y'], inplace=True)
 df['distance'] = df['distance'].astype(float)
 df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 50]
+df_litu = df[df['taxonID_y'] == 'LITU']
 df = df.loc[df.groupby('geometry')['distance'].idxmin()]
+df = pd.merge(df, df_litu, how='outer')
 #TODO use a better filtering method
 df = df[df['distance'] < 10]
-df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 130]
+df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 20]
 
 
 # Define hyperparameters
 batch_size = 32
 learning_rate = 0.001
-num_epochs = 250
+num_epochs = 200
 taxonID_to_int = {taxonID: 0 if taxonID != 'LITU' else 1 for taxonID in df['taxonID_y'].unique()}
 int_to_taxonID = {0: 'OTHER', 1: 'LITU'}
 # # multi class
@@ -133,7 +135,7 @@ print(taxonID_to_int)
 print(sum([1 for x in train_df['taxonID_y'] if not x == 'LITU']))
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=2, alpha=0.75):
+    def __init__(self, gamma=2, alpha=0.8):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
@@ -173,8 +175,8 @@ for epoch in range(num_epochs):
         running_loss += loss.item()
         # print(outputs)
         # Convert logits to predictions by thresholding
-        predictions = (outputs > 0.5).float()  
-        # print(outputs)
+        predictions = (outputs > 0.8).float()  
+        # print(predictions)
 
         # Update correct predictions
         correct += (predictions == labels).sum().item() 
@@ -214,6 +216,13 @@ for epoch in range(num_epochs):
     val_accuracy = val_correct / val_total
     val_losses.append(val_loss)
     val_accuracies.append(val_accuracy)
+
+    # Calculate precision, recall, and F1 score
+    precision = confusion_matrix[1, 1] / (confusion_matrix[1, 1] + confusion_matrix[0, 1])
+    recall = confusion_matrix[1, 1] / (confusion_matrix[1, 1] + confusion_matrix[1, 0])
+    f1 = 2 * (precision * recall) / (precision + recall)
+
+    print(f"Precision: {precision}, Recall: {recall}, F1 Score: {f1}")
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss}, Accuracy: {accuracy}, Validation Loss: {val_loss}, Validation Accuracy: {val_accuracy}")
 
 print(val_losses)

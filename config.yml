@@ -4,3 +4,56 @@ sites:
   - GRSM
   - SERC
   # - TALL # doesn't include any flowering tulip poplar
+
+batches:
+  - '2015':
+    - GRSM
+    - ORNL
+
+  - '2016': 
+    - GRSM
+    - ORNL
+    - SCBI
+    - SERC
+
+  - '2017':
+    - GRSM
+    - ORNL
+    - SCBI
+    - SERC
+
+  - '2018':
+    - GRSM
+
+  - '2019':
+    - SCBI
+    - SERC
+
+  - '2021':
+    - GRSM
+    - SCBI
+    - SERC
+
+dpIDs:
+ - DP3.30010.001 # rgb
+ - DP3.30006.001 # hsi
+
+
+ # GRSM
+  # RGB 2015, 2016, 2017, 2018, 2021, 2022 (2)
+  # HSI 2015, 2016, 2017, 2018, 2021
+ # ORNL
+  # RGB 2015, 2016, 2017
+  # HSI 2015, 2016, 2017, 2018
+ # SCBI
+  # RGB 2016, 2017, 2019, 2021, 2022, 2023
+  # HSI 2016, 2017, 2019, 2021
+ # SERC
+  # RGB 2016, 2017(2), 2019, 2021, 2022
+  # HSI 2016, 2017(2), 2019, 2021
+
+# refined:
+#GRSM 2015, 2016, 2017, 2018, 2021
+#ORNL 2015, 2016, 2017
+#SCBI 2016, 2017, 2019, 2021
+#SERC 2016, 2017, 2019, 2021
