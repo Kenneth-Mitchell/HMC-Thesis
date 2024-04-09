@@ -74,16 +74,24 @@ class Image():
                 self.ground_truth_df = pd.concat([self.ground_truth_df, pd.concat([self.gdf.loc[closest_index].reset_index(drop=True), row.to_frame().T.reset_index(drop=True)], axis=1)], ignore_index=True)
         return not self.ground_truth_df.empty
                 
-    def generate_hsi_trees(self, hsi_path):
-        if self.ground_truth_df.empty:
+    def generate_hsi_trees(self, hsi_path, all=False):
+        if self.ground_truth_df.empty and not all:
             raise Exception("No ground truth data has been annotated. Please run the annotate method first.")
+        else:
+            self.get_hsi_points()
         f = h5py.File(hsi_path, 'r')
         reflectance_data =f[os.path.basename(hsi_path).split('_')[2]]['Reflectance']['Reflectance_Data'][:]
         reflectance_data = np.rot90(reflectance_data, k=2, axes=(0,1))
-        for index, row in self.ground_truth_df.iterrows():
-            xmin, ymin, xmax, ymax = row['xmin_hsi'], row['ymin_hsi'], row['xmax_hsi'], row['ymax_hsi']
-            subset = reflectance_data.copy()[xmin:xmax, ymin:ymax, :]
-            yield subset, row
+        if not all:
+            for index, row in self.ground_truth_df.iterrows():
+                xmin, ymin, xmax, ymax = row['xmin_hsi'], row['ymin_hsi'], row['xmax_hsi'], row['ymax_hsi']
+                subset = reflectance_data.copy()[xmin:xmax, ymin:ymax, :]
+                yield subset, row
+        else:
+            for index, row in self.gdf.iterrows():
+                xmin, ymin, xmax, ymax = row['xmin_hsi'], row['ymin_hsi'], row['xmax_hsi'], row['ymax_hsi']
+                subset = reflectance_data.copy()[xmin:xmax, ymin:ymax, :]
+                yield subset, row
 
 
     def get_hsi_points(self):

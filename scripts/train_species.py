@@ -136,8 +136,6 @@ model = CNNSAM(in_channels=426, num_classes=1).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 criterion = nn.BCEWithLogitsLoss()
 # criterion = FocalLoss()
-val_losses = []
-val_accuracies = []
 
 for epoch in range(num_epochs):
     model.train()
@@ -161,10 +159,10 @@ for epoch in range(num_epochs):
         correct += (predictions == labels).sum().item() 
         total += labels.size(0)
 
-    # Calculate precision
-    precision = correct / (correct + (total - correct))
+    # Calculate accuracy
+    accuracy = correct / total
     epoch_loss = running_loss / len(dataloader)
-    print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss}, Precision: {precision}")
+    print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss}, Accuracy: {accuracy}")
 
 # Save the model
 torch.save(model.state_dict(), 'species_model.pth')
