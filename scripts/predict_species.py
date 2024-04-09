@@ -17,7 +17,8 @@ from model import CNNSAM
 import numpy as np
 from image import Image
 
-test = '/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/rgb_test/2021_GRSM_5_267000_3942000_image.tif'
+sample_image_path = "/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/rgb_test/2021_GRSM_5_275000_3951000_image.tif"
+sample_HSI_path = "/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/hsi/NEON_D07_GRSM_DP3_275000_3951000_reflectance.h5"
 
 # Check if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -72,37 +73,40 @@ class CustomDataset(Dataset):
 
 # Locate trees in the image
 master = []
-img = Image(test)
+img = Image(sample_image_path)
 # img.get_bounding_boxes()
-# for subset, row in img.generate_hsi_trees('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/hsi_test/NEON_D07_GRSM_DP3_267000_3942000_reflectance.h5', all=True):
+# for subset, row in img.generate_hsi_trees(sample_HSI_path, all=True):
 #         with h5py.File(f"/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/{row['xmin']}_{row['ymin']}_{row['xmax']}_{row['ymax']}.h5", 'w') as f:
 #             f.create_dataset('subset', data=np.array(subset))
-        # master.append(f"{row['xmin']}_{row['ymin']}_{row['xmax']}_{row['ymax']}")
+#             f.close()
+#         # master.append(f"{row['xmin']}_{row['ymin']}_{row['xmax']}_{row['ymax']}")
 
-for file in os.walk('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/'):
-    for f in file[2]:
-        if f.endswith('.h5'):
-            master.append(f)
+# for file in os.walk('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/'):
+#     for f in file[2]:
+#         if f.endswith('.h5'):
+#             master.append(f)
 
-master = pd.DataFrame(master, columns=['file'])
-master.to_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv', index=False)
+# master = pd.DataFrame(master, columns=['file'])
+# master.to_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv', index=False)
 
 # Load the data
-dataframe = pd.read_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv')
-data = CustomDataset(dataframe)
-data_loader = DataLoader(data, batch_size=1)
+# dataframe = pd.read_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv')
+# data = CustomDataset(dataframe)
+# data_loader = DataLoader(data, batch_size=1)
 
-predictions = []
-for images, file in data_loader:
-    images = images.to(device)
-    # Make predictions
-    with torch.no_grad():
-        outputs = model(images)
-        predicted_class = (outputs > 0.8)
-        predictions.append((file[0], int(predicted_class.item())))
+# predictions = []
+# for images, file in data_loader:
+#     images = images.to(device)
+#     # Make predictions
+#     with torch.no_grad():
+#         outputs = model(images)
+#         predicted_class = (outputs > 0.8)
+#         predictions.append((file[0], int(predicted_class.item())))
+    
 
-master = pd.merge(dataframe, pd.DataFrame(predictions, columns=['file', 'predicted_class']), on='file')
-master.to_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv', index=False)
+# master = pd.merge(dataframe, pd.DataFrame(predictions, columns=['file', 'predicted_class']), on='file')
+# master.to_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv', index=False)
+master = pd.read_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv')
 rgb_img = img.data.copy().transpose(1,2,0)
 #draw boxes on tulip trees
 for file in master[master['predicted_class'] == 1]['file']:
@@ -115,9 +119,24 @@ for file in master[master['predicted_class'] == 1]['file']:
     rgb_img[rgb_points[2]:rgb_points[2]+2, rgb_points[1]:rgb_points[3], :] = [255, 100, 0]
     rgb_img[rgb_points[0]:rgb_points[2], rgb_points[1]-2:rgb_points[1], :] = [255, 100, 0]
     rgb_img[rgb_points[0]:rgb_points[2], rgb_points[3]:rgb_points[3]+2, :] = [255, 100, 0]
+    # print(rgb_points)
+    # print(rgb_img[rgb_points[0]:rgb_points[2], rgb_points[1]:rgb_points[3], :].shape)
+    # print(rgb_img[rgb_points[0]:rgb_points[2], rgb_points[1]:rgb_points[3], :])
+    
+
+    # plt.imsave('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/rgb.png',rgb_img[rgb_points[0]:rgb_points[2], rgb_points[1]:rgb_points[3], :].astype(np.uint8))
+    # with h5py.File(f"/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/{file}", 'r') as f:
+    #     hsi_img = f['subset'][:].copy()[:,:,[58, 34, 19]]
+    #     hsi_img = hsi_img / hsi_img.max()
+    #     f.close()
+    # plt.imsave('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/hsi.png',hsi_img)
+
+    # break
+
+
 
 # Save the modified image
-plt.imsave('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/2021_GRSM_5_267000_3942000_image.png', rgb_img)
+plt.imsave('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/figure_species_class.png', rgb_img)
 
 
 
