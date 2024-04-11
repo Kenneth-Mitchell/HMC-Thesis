@@ -167,3 +167,14 @@ API_token
 bounding_box_images
 
 lightning_logs
+2021_GRSM_5_270000_3938000_image.tif
+2021_GRSM_5_272000_3941000_image.tif
+config.yml
+crs
+NEON.pt
+config.yml
+output3_patch_size=500_patch_overlap=0.25.png
+output3_patch_size=800_patch_overlap=0.1.png
+rgb.py
+scripts/.Rhistory
+scripts/HSIDataset.py
