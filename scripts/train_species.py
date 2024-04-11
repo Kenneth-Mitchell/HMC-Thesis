@@ -29,6 +29,7 @@ df['distance'] = df['distance'].astype(float)
 df = df[df['taxonID_y'].map(df['taxonID_y'].value_counts()) >= 50]
 df_litu = df[df['taxonID_y'] == 'LITU']
 df = df.loc[df.groupby('geometry')['distance'].idxmin()]
+
 df = pd.merge(df, df_litu, how='outer')
 #TODO use a better filtering method
 df = df[df['distance'] < 10]
@@ -120,17 +121,6 @@ class CustomDataset(Dataset):
 dataset = CustomDataset(df)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-class FocalLoss(nn.Module):
-    def __init__(self, gamma=2, alpha=0.8):
-        super(FocalLoss, self).__init__()
-        self.gamma = gamma
-        self.alpha = alpha
-
-    def forward(self, outputs, labels):
-        bce_loss = nn.BCEWithLogitsLoss(reduction='none')(outputs, labels)
-        pt = torch.exp(-bce_loss)
-        focal_loss = self.alpha * (1 - pt) ** self.gamma * bce_loss
-        return torch.mean(focal_loss)
 
 model = CNNSAM(in_channels=426, num_classes=1).to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
