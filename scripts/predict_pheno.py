@@ -24,7 +24,7 @@ sample_HSI_path = "/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/input_data/hsi
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model = CNNSAM(426, 1).to(device)
-model.load_state_dict(torch.load('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/species_model.pth'))
+model.load_state_dict(torch.load('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/pheno_model.pth'))
 model.eval()
 
 class ResizeToSize:
@@ -91,6 +91,7 @@ img = Image(sample_image_path)
 
 # Load the data
 dataframe = pd.read_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv')
+dataframe = dataframe[dataframe['predicted_class'] == 1]
 data = CustomDataset(dataframe)
 data_loader = DataLoader(data, batch_size=1)
 
@@ -100,18 +101,18 @@ for images, file in data_loader:
     # Make predictions
     with torch.no_grad():
         outputs = model(images)
-        predicted_class = (outputs > 0.8)
-        predictions.append((file[0], int(predicted_class.item())))
+        predicted_class_pheno = (outputs > 0.5)
+        predictions.append((file[0], int(predicted_class_pheno.item())))
     
 
-master = pd.merge(dataframe, pd.DataFrame(predictions, columns=['file', 'predicted_class']), on='file')
+master = pd.merge(dataframe, pd.DataFrame(predictions, columns=['file', 'predicted_class_pheno']), on='file')
 master.to_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv', index=False)
 master = pd.read_csv('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/temp_data/unknown_hsi_tensors/master.csv')
 rgb_img = img.data.copy().transpose(1,2,0)
 rgb_img_2 = img.data.copy().transpose(1,2,0)
 #draw boxes on tulip trees
 centroids = []
-for file in master[master['predicted_class'] == 1]['file']:
+for file in master[master['predicted_class_pheno'] == 1]['file']:
     # Open the test image
     
     xmin, ymin, xmax, ymax = file.split('_')
@@ -145,11 +146,11 @@ centroids = np.array(centroids)
 plt.scatter(centroids[:,1], centroids[:,0], c='r', s=.5, alpha=0.5)
 plt.imshow(rgb_img_2)
 plt.axis('off')
-plt.savefig('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/figure_final.png',bbox_inches='tight')
+plt.savefig('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/figure_final_pheno.png',bbox_inches='tight')
 plt.close()
 
 # Save the modified image
-plt.imsave('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/figure_species_class.png', rgb_img)
+plt.imsave('/mnt/c/Users/kmitchell/Documents/GitHub/Thesis/figure_pheno_class.png', rgb_img)
 
 
 

@@ -189,8 +189,9 @@ val_accuracies = []
 
 loo = LeaveOneOut()
 df = df.sample(frac=1).reset_index(drop=True)
-confusion_matrix = torch.zeros(2, 2)
+confusion_matrix = torch.zeros(2, 2)``
 for train_index, test_index in loo.split(df):
+    model.fc = nn.Linear(model.fc.in_features, 1).to(device)
     train_df, test_df = df.iloc[train_index], df.iloc[test_index]
 
     train_dataset = CustomDataset(train_df)

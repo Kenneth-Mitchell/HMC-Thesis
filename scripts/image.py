@@ -63,6 +63,7 @@ class Image():
         centroid_array = np.array(list(zip(self.gdf.geometry.centroid.y, self.gdf.geometry.centroid.x)))
 
         for index, row in df.iterrows(): #TODO currently will override multiple competing values
+            print('wee woo')
             ground_truth_utm = pd.to_numeric(row[['adjNorthing', 'adjEasting']].values).reshape(1, -1)
             distances = cdist(ground_truth_utm, centroid_array) # TODO consider using the size of the tree
             distance = min(distances[0, :])
